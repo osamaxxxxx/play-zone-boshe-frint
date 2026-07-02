@@ -15,7 +15,7 @@ export default function ActiveSessionModal() {
   const [remainingPct, setRemainingPct] = useState(100);
   const [showTimeAlert, setShowTimeAlert] = useState(false);
   const [alertMsg, setAlertMsg] = useState('');
-  const alertTimer = useRef<ReturnType<typeof setTimeout>>();
+  const alertTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     if (!currentRoom?.id) return;
