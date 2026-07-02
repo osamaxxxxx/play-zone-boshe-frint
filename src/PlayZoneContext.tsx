@@ -227,6 +227,14 @@ export function PlayZoneProvider({ children }: { children: ReactNode }) {
         room.status = 'busy';
         const isPaused = as.isPaused || false;
         const pausedTime = as.pausedTimeMs || 0;
+        let restoredPauseStartTime: Date | undefined;
+        if (isPaused && as.pauseStartedAt) {
+          const serverPauseStart = new Date(as.pauseStartedAt);
+          const extraPauseMs = Date.now() - serverPauseStart.getTime();
+          restoredPauseStartTime = new Date();
+        } else if (isPaused) {
+          restoredPauseStartTime = new Date();
+        }
         room.session = {
           backendId: as.id,
           startTime: new Date(as.startTime),
@@ -237,7 +245,7 @@ export function PlayZoneProvider({ children }: { children: ReactNode }) {
           timeSegments,
           paused: isPaused,
           pausedTime,
-          pauseStartTime: isPaused ? new Date() : undefined,
+          pauseStartTime: restoredPauseStartTime,
         };
       });
 
@@ -461,6 +469,7 @@ export function PlayZoneProvider({ children }: { children: ReactNode }) {
       updatedRoom.session.pauseStartTime = new Date();
     } else if (updatedRoom.session.pauseStartTime) {
       updatedRoom.session.pausedTime += Date.now() - updatedRoom.session.pauseStartTime.getTime();
+      updatedRoom.session.pauseStartTime = undefined;
     }
     setRooms(prev => prev.map(r => r.id === updatedRoom.id ? updatedRoom : r));
     setCurrentRoom(updatedRoom);
@@ -468,7 +477,15 @@ export function PlayZoneProvider({ children }: { children: ReactNode }) {
     if (updatedRoom.session.backendId) {
       api.post(`/sessions/${updatedRoom.session.backendId}/pause`, {
         isPaused: updatedRoom.session.paused,
-        pausedTimeMs: updatedRoom.session.pausedTime,
+      }).then(res => {
+        const data = res.data;
+        if (data) {
+          setRooms(prev => prev.map(r =>
+            r.session?.backendId === data.id
+              ? { ...r, session: { ...r.session!, pausedTime: data.pausedTimeMs, paused: data.isPaused, pauseStartTime: data.pauseStartedAt ? new Date() : undefined } }
+              : r
+          ));
+        }
       }).catch(() => {});
     }
   };
@@ -507,6 +524,7 @@ export function PlayZoneProvider({ children }: { children: ReactNode }) {
 
     const invoiceData = {
       room: currentRoom.number,
+      sessionId: s.backendId || '',
       duration: durationStr,
       totalHours,
       playCost: Math.round(playCost),
@@ -549,6 +567,7 @@ export function PlayZoneProvider({ children }: { children: ReactNode }) {
       const s = totalSecs % 60;
 
       await api.post('/receipts', {
+        sessionId: inv.sessionId || '',
         deviceName: inv.deviceName,
         deviceType: inv.deviceType,
         startTime: inv.startTime,
