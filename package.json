@@ -6,13 +6,16 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "postinstall": "node scripts/install-binding.cjs"
   },
   "engines": {
     "node": ">=20.19.0"
   },
+  "optionalDependencies": {
+    "@rolldown/binding-win32-x64-msvc": "^1.1.4"
+  },
   "devDependencies": {
-    "@rolldown/binding-win32-x64-msvc": "^1.1.4",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.2.0",
