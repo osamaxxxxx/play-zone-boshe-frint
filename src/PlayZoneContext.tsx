@@ -226,11 +226,11 @@ export function PlayZoneProvider({ children }: { children: ReactNode }) {
 
         room.status = 'busy';
         const isPaused = as.isPaused || false;
-        const pausedTime = as.pausedTimeMs || 0;
+        let pausedTime = as.pausedTimeMs || 0;
         let restoredPauseStartTime: Date | undefined;
         if (isPaused && as.pauseStartedAt) {
           const serverPauseStart = new Date(as.pauseStartedAt);
-          const extraPauseMs = Date.now() - serverPauseStart.getTime();
+          pausedTime += Math.max(0, Date.now() - serverPauseStart.getTime());
           restoredPauseStartTime = new Date();
         } else if (isPaused) {
           restoredPauseStartTime = new Date();
@@ -385,12 +385,13 @@ export function PlayZoneProvider({ children }: { children: ReactNode }) {
         durationMinutes: duration ? Math.round(duration * 60) : null,
       });
       const backendSessionId = res.data?.id;
+      const serverStartTime = res.data?.startTime ? new Date(res.data.startTime) : new Date();
 
       const updatedRoom: Room = {
         ...currentRoom, status: 'busy',
         session: {
           backendId: backendSessionId,
-          startTime: new Date(), mode, duration, rate,
+          startTime: serverStartTime, mode, duration, rate,
           orders: [],
           timeSegments: [{ mode, rate, startTime: new Date().toISOString(), endTime: null }],
           paused: false, pausedTime: 0,
