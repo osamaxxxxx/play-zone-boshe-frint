@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { usePlayZone, ReceiptData } from '../PlayZoneContext';
+import { usePlayZone, ReceiptData, parseUTCDate } from '../PlayZoneContext';
 
 export default function Invoices() {
   const { loadReceipts, receipts, setShowReceiptDetail, showReceiptDetail } = usePlayZone();
@@ -60,7 +60,7 @@ export default function Invoices() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
                   <div>
                     <span className="text-gray-500 block text-xs">التاريخ</span>
-                    <span className="text-xs">{new Date(r.createdAt).toLocaleString('ar-EG')}</span>
+                    <span className="text-xs">{parseUTCDate(r.createdAt).toLocaleString('ar-EG')}</span>
                   </div>
                   <div>
                     <span className="text-gray-500 block text-xs">المدة</span>
@@ -115,11 +115,11 @@ export default function Invoices() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-gray-400">البداية</span>
-                  <span className="text-sm">{new Date(showReceiptDetail.startTime).toLocaleString('ar-EG')}</span>
+                  <span className="text-sm">{parseUTCDate(showReceiptDetail.startTime).toLocaleString('ar-EG')}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-gray-400">النهاية</span>
-                  <span className="text-sm">{new Date(showReceiptDetail.endTime).toLocaleString('ar-EG')}</span>
+                  <span className="text-sm">{parseUTCDate(showReceiptDetail.endTime).toLocaleString('ar-EG')}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-gray-400">المدة</span>
@@ -160,7 +160,7 @@ export default function Invoices() {
                   </div>
                 </div>
               </div>
-              <div className="text-center text-xs text-gray-500">{new Date(showReceiptDetail.createdAt).toLocaleString('ar-EG')}</div>
+              <div className="text-center text-xs text-gray-500">{parseUTCDate(showReceiptDetail.createdAt).toLocaleString('ar-EG')}</div>
             </div>
           </div>
         </div>

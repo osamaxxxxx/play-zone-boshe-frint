@@ -120,6 +120,18 @@ function parseMenuItems(json: string): MenuItem[] {
   try { return JSON.parse(json); } catch { return []; }
 }
 
+export function parseUTCDate(dateVal: any): Date {
+  if (!dateVal) return new Date();
+  if (dateVal instanceof Date) return dateVal;
+  if (typeof dateVal === 'string') {
+    if (!dateVal.endsWith('Z') && !dateVal.includes('+') && !/-\d{2}:\d{2}$/.test(dateVal)) {
+      const normalized = dateVal.includes('T') ? dateVal : dateVal.replace(' ', 'T');
+      return new Date(normalized + 'Z');
+    }
+  }
+  return new Date(dateVal);
+}
+
 export function PlayZoneProvider({ children }: { children: ReactNode }) {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [receipts, setReceipts] = useState<ReceiptData[]>([]);
@@ -229,7 +241,7 @@ export function PlayZoneProvider({ children }: { children: ReactNode }) {
         let pausedTime = as.pausedTimeMs || 0;
         let restoredPauseStartTime: Date | undefined;
         if (isPaused && as.pauseStartedAt) {
-          const serverPauseStart = new Date(as.pauseStartedAt);
+          const serverPauseStart = parseUTCDate(as.pauseStartedAt);
           pausedTime += Math.max(0, Date.now() - serverPauseStart.getTime());
           restoredPauseStartTime = new Date();
         } else if (isPaused) {
@@ -237,7 +249,7 @@ export function PlayZoneProvider({ children }: { children: ReactNode }) {
         }
         room.session = {
           backendId: as.id,
-          startTime: new Date(as.startTime),
+          startTime: parseUTCDate(as.startTime),
           mode: lastLog ? mapMode(lastLog.mode) : 'single',
           duration: as.durationMinutes ? as.durationMinutes / 60 : null,
           rate: timeSegments.length > 0 ? timeSegments[timeSegments.length - 1].rate : 30,
@@ -385,7 +397,7 @@ export function PlayZoneProvider({ children }: { children: ReactNode }) {
         durationMinutes: duration ? Math.round(duration * 60) : null,
       });
       const backendSessionId = res.data?.id;
-      const serverStartTime = res.data?.startTime ? new Date(res.data.startTime) : new Date();
+      const serverStartTime = res.data?.startTime ? parseUTCDate(res.data.startTime) : new Date();
 
       const updatedRoom: Room = {
         ...currentRoom, status: 'busy',
@@ -505,8 +517,8 @@ export function PlayZoneProvider({ children }: { children: ReactNode }) {
     let playCost = 0;
     const breakdown: { mode: string; duration: number; cost: number }[] = [];
     s.timeSegments.forEach(seg => {
-      const end = seg.endTime ? new Date(seg.endTime).getTime() : now.getTime();
-      const start = new Date(seg.startTime).getTime();
+      const end = seg.endTime ? parseUTCDate(seg.endTime).getTime() : now.getTime();
+      const start = parseUTCDate(seg.startTime).getTime();
       const durHours = (end - start) / 3600000;
       const cost = durHours * seg.rate;
       playCost += cost;

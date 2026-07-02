@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { usePlayZone, MenuItem } from '../PlayZoneContext';
+import { usePlayZone, MenuItem, parseUTCDate } from '../PlayZoneContext';
 
 export default function ActiveSessionModal() {
   const { rooms, currentRoom, setShowActiveModal, switchMode, addOrder, removeOrder, pauseSession, endSession, settings } = usePlayZone();
@@ -57,8 +57,8 @@ export default function ActiveSessionModal() {
       let pc = 0;
       const pivot = s.paused && s.pauseStartTime ? s.pauseStartTime : new Date();
       s.timeSegments.forEach(seg => {
-        const end = seg.endTime ? new Date(seg.endTime) : pivot;
-        const dur = (end.getTime() - new Date(seg.startTime).getTime()) / 3600000;
+        const end = seg.endTime ? parseUTCDate(seg.endTime) : pivot;
+        const dur = (end.getTime() - parseUTCDate(seg.startTime).getTime()) / 3600000;
         pc += dur * seg.rate;
       });
       const oc = s.orders.reduce((sum, o) => sum + o.price * o.quantity, 0);
