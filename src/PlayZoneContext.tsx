@@ -86,6 +86,8 @@ interface PlayZoneState {
   removeMenuItem: (id: number) => void;
   saveSettings: () => Promise<void>;
   loadReceipts: (year: number, month: number, day?: number) => Promise<void>;
+  deleteReceipt: (id: string) => Promise<void>;
+  deleteAllReceipts: (year?: number, month?: number) => Promise<void>;
   notifications: AlertNotification[];
   dismissNotification: (id: string) => void;
 }
@@ -280,6 +282,20 @@ export function PlayZoneProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  const deleteReceipt = useCallback(async (id: string) => {
+    try { await api.delete(`/receipts/${id}`); }
+    catch { /* ignore */ }
+  }, []);
+
+  const deleteAllReceipts = useCallback(async (year?: number, month?: number) => {
+    try {
+      const params: Record<string, any> = {};
+      if (year) params.year = year;
+      if (month) params.month = month;
+      await api.delete('/receipts', { params });
+    } catch { /* ignore */ }
   }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
@@ -732,7 +748,7 @@ export function PlayZoneProvider({ children }: { children: ReactNode }) {
     pauseSession, endSession, confirmPayment,
     addDevice, toggleMaintenance, deleteDevice, updateDevice,
     addMenuItem, updateMenuItem, removeMenuItem, saveSettings,
-    loadReceipts, notifications, dismissNotification,
+    loadReceipts, deleteReceipt, deleteAllReceipts, notifications, dismissNotification,
     editingMenuItem,
   }), [
     rooms, receipts, todayRevenue, settings, currentRoom, activePage,

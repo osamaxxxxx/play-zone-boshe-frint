@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { usePlayZone, ReceiptData, parseUTCDate } from '../PlayZoneContext';
 
 export default function Invoices() {
-  const { loadReceipts, receipts, setShowReceiptDetail, showReceiptDetail } = usePlayZone();
+  const { loadReceipts, receipts, setShowReceiptDetail, showReceiptDetail, deleteReceipt, deleteAllReceipts } = usePlayZone();
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
@@ -14,8 +14,45 @@ export default function Invoices() {
 
   const search = () => loadReceipts(year, month, day ? parseInt(day) : undefined);
 
+  const totalTimeCharge = receipts.reduce((s, r) => s + r.timeCharge, 0);
+  const totalOrders = receipts.reduce((s, r) => s + r.ordersTotal, 0);
+  const totalRevenue = receipts.reduce((s, r) => s + r.grandTotal, 0);
+
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm('هل أنت متأكد من حذف هذه الفاتورة؟')) return;
+    await deleteReceipt(id);
+    search();
+  };
+
+  const handleDeleteAll = async () => {
+    if (receipts.length === 0) return;
+    if (!confirm(`هل أنت متأكد من حذف جميع الفواتير (${receipts.length})؟ لا يمكن التراجع عن هذا الإجراء.`)) return;
+    if (!confirm('تأكيد مرة أخرى: حذف كل الفواتير?')) return;
+    await deleteAllReceipts(year, month);
+    search();
+  };
+
   return (
     <div className="container mx-auto px-4 py-6">
+      {/* Summary */}
+      {receipts.length > 0 && (
+        <div className="grid grid-cols-3 gap-3 mb-5">
+          <div className="bg-gray-900/50 rounded-xl p-4 border border-gray-700 text-center">
+            <div className="text-xs text-gray-400 mb-1">وقت اللعب</div>
+            <div className="text-lg font-bold text-purple-400">{totalTimeCharge.toFixed(2)} ج</div>
+          </div>
+          <div className="bg-gray-900/50 rounded-xl p-4 border border-gray-700 text-center">
+            <div className="text-xs text-gray-400 mb-1">الأوردرات</div>
+            <div className="text-lg font-bold text-yellow-400">{totalOrders.toFixed(2)} ج</div>
+          </div>
+          <div className="bg-gray-900/50 rounded-xl p-4 border border-gray-700 text-center">
+            <div className="text-xs text-gray-400 mb-1">الإجمالي</div>
+            <div className="text-lg font-bold text-green-400">{totalRevenue.toFixed(2)} ج</div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center gap-3 mb-6">
         <div>
           <label className="block text-xs text-gray-400 mb-1">السنة</label>
@@ -36,6 +73,11 @@ export default function Invoices() {
           style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' }}>
           <i className="fa-solid fa-search ml-2"></i>بحث
         </button>
+        {receipts.length > 0 && (
+          <button onClick={handleDeleteAll} className="mt-5 px-4 py-2 rounded-lg text-sm font-bold bg-red-600/80 hover:bg-red-600 text-white">
+            <i className="fa-solid fa-trash ml-2"></i>حذف الكل
+          </button>
+        )}
       </div>
 
       <div className="bg-gray-900/50 rounded-2xl border border-purple-500/30 overflow-hidden">
@@ -53,9 +95,14 @@ export default function Invoices() {
                     <span className="font-bold truncate">{r.deviceName}</span>
                     <span className="text-xs bg-purple-600/30 text-purple-300 px-2 py-0.5 rounded">{r.deviceType}</span>
                   </div>
-                  <button onClick={() => setShowReceiptDetail(r)} className="text-blue-400 hover:text-blue-300 shrink-0 p-1">
-                    <i className="fa-solid fa-eye"></i>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setShowReceiptDetail(r)} className="text-blue-400 hover:text-blue-300 shrink-0 p-1">
+                      <i className="fa-solid fa-eye"></i>
+                    </button>
+                    <button onClick={e => handleDelete(r.id, e)} className="text-red-400 hover:text-red-300 shrink-0 p-1">
+                      <i className="fa-solid fa-trash"></i>
+                    </button>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
                   <div>
@@ -160,6 +207,9 @@ export default function Invoices() {
                   </div>
                 </div>
               </div>
+              <button onClick={e => handleDelete(showReceiptDetail.id, e as any)} className="w-full py-2 rounded-lg text-sm font-bold bg-red-600/80 hover:bg-red-600 text-white">
+                <i className="fa-solid fa-trash ml-2"></i>حذف الفاتورة
+              </button>
               <div className="text-center text-xs text-gray-500">{parseUTCDate(showReceiptDetail.createdAt).toLocaleString('ar-EG')}</div>
             </div>
           </div>
